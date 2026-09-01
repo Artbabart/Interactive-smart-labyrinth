@@ -36,7 +36,7 @@ export class Game implements AfterViewInit, OnDestroy {
       type: Phaser.AUTO,
 
       width: tileSize * 4,
-      height: tileSize * 4,
+      height: tileSize * 4 + 100,
 
       parent: this.gameContainer.nativeElement,
 
@@ -44,6 +44,58 @@ export class Game implements AfterViewInit, OnDestroy {
 
       scene: {
         create: function () {
+
+          let playerRow = 0;
+          let playerColumn = 0;
+
+          let steps = 0;
+          let mistakes = 0;
+
+          let gameFinished = false;
+
+          const statusText = this.add.text(
+            10,
+            tileSize * 4 + 10,
+            'Indulás!',
+            {
+              fontSize: '20px',
+              color: '#ffffff'
+            }
+          );
+
+          const statsText = this.add.text(
+            10,
+            tileSize * 4 + 45,
+            'Lépések: 0 | Hibák: 0',
+            {
+              fontSize: '18px',
+              color: '#ffffff'
+            }
+          );
+
+          const player = this.add.circle(
+            tileSize / 2,
+            tileSize / 2,
+            25,
+            0x0066ff
+          );
+
+          const updatePlayerPosition = () => {
+
+            player.setPosition(
+              playerColumn * tileSize + tileSize / 2,
+              playerRow * tileSize + tileSize / 2
+            );
+
+          };
+
+          const updateStats = () => {
+
+            statsText.setText(
+              `Lépések: ${steps} | Hibák: ${mistakes}`
+            );
+
+          };
 
           maze.forEach((row, rowIndex) => {
 
@@ -61,7 +113,7 @@ export class Game implements AfterViewInit, OnDestroy {
               let label = '';
 
               if (tile === 'S') {
-                color = 0x00aa00;
+                color = 0x66cc66;
                 label = 'START';
               }
 
@@ -73,10 +125,6 @@ export class Game implements AfterViewInit, OnDestroy {
               if (tile === 'X') {
                 color = 0x555555;
                 label = 'X';
-              }
-
-              if (tile === 'P') {
-                color = 0xffffff;
               }
 
               const rectangle =
@@ -99,24 +147,86 @@ export class Game implements AfterViewInit, OnDestroy {
                 'pointerdown',
                 () => {
 
-                  console.log(
-                    `Mező: ${rowIndex}-${columnIndex}`
-                  );
+                  if (gameFinished) {
+                    return;
+                  }
+
+                  const rowDistance =
+                    Math.abs(rowIndex - playerRow);
+
+                  const columnDistance =
+                    Math.abs(columnIndex - playerColumn);
+
+                  const isNeighbour =
+                    rowDistance + columnDistance === 1;
+
+                  if (!isNeighbour) {
+
+                    mistakes++;
+
+                    statusText.setText(
+                      '❌ Csak szomszédos mezőre léphetsz!'
+                    );
+
+                    updateStats();
+
+                    return;
+                  }
 
                   if (tile === 'X') {
 
-                    rectangle.setFillStyle(
-                      0xff0000
-                    );
-
-                  } else {
+                    mistakes++;
 
                     rectangle.setFillStyle(
-                      0x66ccff
+                      0xff3333
                     );
 
+                    statusText.setText(
+                      '❌ Ez akadály!'
+                    );
+
+                    updateStats();
+
+                    this.time.delayedCall(
+                      400,
+                      () => {
+                        rectangle.setFillStyle(
+                          0x555555
+                        );
+                      }
+                    );
+
+                    return;
                   }
 
+                  playerRow = rowIndex;
+                  playerColumn = columnIndex;
+
+                  steps++;
+
+                  updatePlayerPosition();
+                  updateStats();
+
+                  rectangle.setFillStyle(
+                    0x66ccff
+                  );
+
+                  statusText.setText(
+                    '✅ Ügyes! Jó lépés.'
+                  );
+
+                  if (tile === 'C') {
+
+                    gameFinished = true;
+
+                    statusText.setText(
+                      `🎉 Célba értél! Lépések: ${steps}, hibák: ${mistakes}`
+                    );
+
+                    player.setFillStyle(
+                      0x00ff00
+                    );
+                  }
                 }
               );
 
@@ -135,13 +245,13 @@ export class Game implements AfterViewInit, OnDestroy {
                   }
                 )
                 .setOrigin(0.5);
-
               }
 
             });
 
           });
 
+          updatePlayerPosition();
         }
       }
     };
