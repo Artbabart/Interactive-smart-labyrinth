@@ -2,12 +2,14 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  Input,
   OnDestroy,
   ViewChild
 } from '@angular/core';
 
 import Phaser from 'phaser';
-import { LEVEL_3 } from '../levels/level-3';
+import { Level } from '../levels/level.model';
+import { LEVEL_1 } from '../levels/level-1';
 
 @Component({
   selector: 'app-game',
@@ -16,6 +18,8 @@ import { LEVEL_3 } from '../levels/level-3';
   styleUrl: './game.scss'
 })
 export class Game implements AfterViewInit, OnDestroy {
+
+  @Input() level: Level = LEVEL_1;
 
   @ViewChild('gameContainer', { static: true })
   gameContainer!: ElementRef<HTMLDivElement>;
@@ -33,7 +37,7 @@ export class Game implements AfterViewInit, OnDestroy {
     // P = járható mező (Path)
     // X = akadály
     // C = Cél
-    const level = LEVEL_3;
+    const level = this.level;
 
     const maze = level.maze;
 

@@ -1,13 +1,38 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+
 import { Game } from './game/game';
+import { Level } from './levels/level.model';
+import { LEVELS } from './levels/levels';
 
 @Component({
-  imports: [RouterOutlet, Game],
   selector: 'app-root',
-  styleUrl: './app.scss',
+  standalone: true,
+
+  imports: [
+    Game
+  ],
+
   templateUrl: './app.html',
+  styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('frontend');
+
+  levels = LEVELS;
+
+  selectedLevel: Level | null = null;
+
+
+  startLevel(level: Level): void {
+
+    this.selectedLevel = level;
+
+  }
+
+
+  backToMenu(): void {
+
+    this.selectedLevel = null;
+
+  }
+
 }

@@ -1,1 +1,73 @@
-<app-game></app-game>
+<div class="app-container">
+
+  @if (!selectedLevel) {
+
+    <div class="level-selection">
+
+      <h1>
+        ✨ Smart Labirintus ✨
+      </h1>
+
+      <p class="subtitle">
+        Válassz egy kalandot!
+      </p>
+
+
+      <div class="level-list">
+
+        @for (level of levels; track level.id) {
+
+          <div class="level-card">
+
+            <h2>
+              {{ level.name }}
+            </h2>
+
+            <p>
+              Nehézség:
+              <strong>
+                {{ level.difficulty }}
+              </strong>
+            </p>
+
+            <button
+              (click)="startLevel(level)"
+            >
+              ▶ Indítás
+            </button>
+
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+
+  @if (selectedLevel) {
+
+    <div class="game-screen">
+
+      <button
+        class="back-button"
+        (click)="backToMenu()"
+      >
+        ← Vissza a pályákhoz
+      </button>
+
+      <h2>
+        {{ selectedLevel.name }}
+      </h2>
+
+      <app-game
+        [level]="selectedLevel">
+      </app-game>
+
+    </div>
+
+  }
+
+</div>
