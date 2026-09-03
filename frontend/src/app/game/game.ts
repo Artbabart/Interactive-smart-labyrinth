@@ -8,8 +8,10 @@ import {
 } from '@angular/core';
 
 import Phaser from 'phaser';
+
 import { Level } from '../levels/level.model';
 import { LEVEL_1 } from '../levels/level-1';
+
 
 @Component({
   selector: 'app-game',
@@ -26,20 +28,15 @@ export class Game implements AfterViewInit, OnDestroy {
 
   private game?: Phaser.Game;
 
+
   ngAfterViewInit(): void {
 
-    // Egy mező mérete pixelben
     const tileSize = 120;
 
-    // A labirintus
-    //
-    // S = Start
-    // P = járható mező (Path)
-    // X = akadály
-    // C = Cél
     const level = this.level;
 
     const maze = level.maze;
+
 
     const config: Phaser.Types.Core.GameConfig = {
 
@@ -47,8 +44,7 @@ export class Game implements AfterViewInit, OnDestroy {
 
       width: tileSize * 4,
 
-      // +120 pixel a visszajelzéseknek
-      height: tileSize * 4 + 120,
+      height: tileSize * 4 + 160,
 
       parent: this.gameContainer.nativeElement,
 
@@ -70,29 +66,40 @@ export class Game implements AfterViewInit, OnDestroy {
           let steps = 0;
           let mistakes = 0;
 
+          let gameStarted = false;
           let gameFinished = false;
+
+          let startTime = 0;
+          let elapsedSeconds = 0;
 
 
           /*
            * -------------------------
-           * SZÖVEGES VISSZAJELZÉSEK
+           * PÁLYA NEVE
+           * -------------------------
+           */
+
+          const levelText = this.add.text(
+            10,
+            tileSize * 4 + 5,
+            `${level.name} – ${level.difficulty}`,
+            {
+              fontSize: '18px',
+              color: '#ffcc00'
+            }
+          );
+
+
+          /*
+           * -------------------------
+           * STÁTUSZ
            * -------------------------
            */
 
           const statusText = this.add.text(
             10,
-            tileSize * 4 + 10,
-            `${level.name} – ${level.difficulty}`,
-            {
-              fontSize: '20px',
-              color: '#ffffff'
-            }
-          );
-
-          const statsText = this.add.text(
-            10,
-            tileSize * 4 + 50,
-            'Lépések: 0 | Hibák: 0',
+            tileSize * 4 + 35,
+            '⏳ A játék még nem indult el.',
             {
               fontSize: '18px',
               color: '#ffffff'
@@ -102,13 +109,42 @@ export class Game implements AfterViewInit, OnDestroy {
 
           /*
            * -------------------------
+           * STATISZTIKA
+           * -------------------------
+           */
+
+          const statsText = this.add.text(
+            10,
+            tileSize * 4 + 70,
+            'Lépések: 0 | Hibák: 0 | Idő: 0 mp',
+            {
+              fontSize: '16px',
+              color: '#ffffff'
+            }
+          );
+
+
+          /*
+           * -------------------------
+           * EREDMÉNY
+           * -------------------------
+           */
+
+          const resultText = this.add.text(
+            10,
+            tileSize * 4 + 105,
+            '',
+            {
+              fontSize: '16px',
+              color: '#00ff99'
+            }
+          );
+
+
+          /*
+           * -------------------------
            * MEZŐK TÁROLÁSA
            * -------------------------
-           *
-           * Erre azért van szükség,
-           * hogy később módosítani
-           * tudjuk az adott mező
-           * színét.
            */
 
           const tileObjects:
@@ -120,14 +156,9 @@ export class Game implements AfterViewInit, OnDestroy {
            * IDEIGLENES JÁTÉKOSJELÖLŐ
            * -------------------------
            *
-           * Ez később NEM feltétlenül
-           * lesz része a végleges
-           * projektoros játéknak.
-           *
-           * Fejlesztés közben azt
-           * mutatja, hogy a rendszer
-           * szerint melyik mezőn áll
-           * a gyermek.
+           * Fejlesztés közben mutatja,
+           * hogy a rendszer szerint
+           * melyik mezőn áll a gyerek.
            */
 
           const player = this.add.container(
@@ -135,10 +166,9 @@ export class Game implements AfterViewInit, OnDestroy {
             tileSize / 2
           );
 
-          // A mezők fölött jelenjen meg
           player.setDepth(10);
 
-          // Test
+
           const playerBody = this.add.circle(
             0,
             10,
@@ -146,13 +176,14 @@ export class Game implements AfterViewInit, OnDestroy {
             0x0066ff
           );
 
-          // Fej
+
           const playerHead = this.add.circle(
             0,
             -18,
             14,
             0xffd6a5
           );
+
 
           player.add([
             playerBody,
@@ -169,7 +200,151 @@ export class Game implements AfterViewInit, OnDestroy {
           const updateStats = () => {
 
             statsText.setText(
-              `Lépések: ${steps} | Hibák: ${mistakes}`
+              `Lépések: ${steps} | Hibák: ${mistakes} | Idő: ${elapsedSeconds} mp`
+            );
+
+          };
+
+
+          /*
+           * -------------------------
+           * IDŐZÍTŐ
+           * -------------------------
+           *
+           * Már létezik, de csak akkor
+           * számol, ha gameStarted = true.
+           */
+
+          const timerEvent = this.time.addEvent({
+
+            delay: 1000,
+
+            loop: true,
+
+            callback: () => {
+
+              if (!gameStarted || gameFinished) {
+                return;
+              }
+
+              const currentTime = Date.now();
+
+              elapsedSeconds =
+                Math.floor(
+                  (currentTime - startTime) / 1000
+                );
+
+              updateStats();
+
+            }
+
+          });
+
+
+          /*
+           * -------------------------
+           * JÁTÉK INDÍTÁSA
+           * -------------------------
+           *
+           * MOST:
+           * az INDÍTÁS gomb hívja meg.
+           *
+           * KÉSŐBB:
+           * az ESP32 / START FSR
+           * fogja meghívni.
+           */
+
+          const startGame = () => {
+
+            if (gameStarted || gameFinished) {
+              return;
+            }
+
+            gameStarted = true;
+
+            startTime = Date.now();
+
+            elapsedSeconds = 0;
+
+            statusText.setText(
+              '🚀 A játék elindult!'
+            );
+
+            updateStats();
+
+          };
+
+
+          /*
+           * -------------------------
+           * JÁTÉK BEFEJEZÉSE
+           * -------------------------
+           */
+
+          const finishGame = () => {
+
+            if (!gameStarted || gameFinished) {
+              return;
+            }
+
+            gameFinished = true;
+
+
+            const endTime = Date.now();
+
+            elapsedSeconds =
+              Math.floor(
+                (endTime - startTime) / 1000
+              );
+
+
+            timerEvent.remove(false);
+
+            updateStats();
+
+
+            /*
+             * Ezt az objektumot később
+             * elküldjük a Laravel API-nak.
+             */
+
+            const result = {
+
+              levelId: level.id,
+
+              levelName: level.name,
+
+              difficulty: level.difficulty,
+
+              steps: steps,
+
+              mistakes: mistakes,
+
+              timeSeconds: elapsedSeconds,
+
+              completed: true
+
+            };
+
+
+            console.log(
+              'Játék eredménye:',
+              result
+            );
+
+
+            statusText.setText(
+              '🎉 Célba értél!'
+            );
+
+
+            resultText.setText(
+              `Eredmény: ${elapsedSeconds} mp | ${steps} lépés | ${mistakes} hiba`
+            );
+
+
+            playerBody.setFillStyle(
+              0x00ff00
             );
 
           };
@@ -179,17 +354,6 @@ export class Game implements AfterViewInit, OnDestroy {
            * -------------------------
            * MOZGÁS FELDOLGOZÁSA
            * -------------------------
-           *
-           * FONTOS:
-           *
-           * Ezt hívja most:
-           *
-           * - az egérkattintás
-           * - a billentyűzet
-           *
-           * Később pedig ugyanezt
-           * fogja meghívni az ESP32
-           * által küldött szenzoradat.
            */
 
           const tryMove = (
@@ -197,19 +361,40 @@ export class Game implements AfterViewInit, OnDestroy {
             columnIndex: number
           ) => {
 
-            // Ha már vége a játéknak,
-            // ne lehessen tovább lépni.
+            /*
+             * Indítás előtt nem lehet
+             * mozogni.
+             */
+
+            if (!gameStarted) {
+
+              statusText.setText(
+                '⏳ Előbb indítsd el a játékot!'
+              );
+
+              return;
+
+            }
+
+
+            /*
+             * Befejezett játék után
+             * sem lehet tovább mozogni.
+             */
+
             if (gameFinished) {
               return;
             }
+
 
             const tile =
               maze[rowIndex][columnIndex];
 
 
             /*
-             * Ellenőrizzük,
-             * hogy szomszédos mező-e.
+             * -------------------------
+             * SZOMSZÉDOSSÁG
+             * -------------------------
              */
 
             const rowDistance =
@@ -217,10 +402,12 @@ export class Game implements AfterViewInit, OnDestroy {
                 rowIndex - playerRow
               );
 
+
             const columnDistance =
               Math.abs(
                 columnIndex - playerColumn
               );
+
 
             const isNeighbour =
               rowDistance +
@@ -229,7 +416,7 @@ export class Game implements AfterViewInit, OnDestroy {
 
             /*
              * -------------------------
-             * NEM SZOMSZÉDOS MEZŐ
+             * NEM SZOMSZÉDOS
              * -------------------------
              */
 
@@ -244,6 +431,7 @@ export class Game implements AfterViewInit, OnDestroy {
               updateStats();
 
               return;
+
             }
 
 
@@ -263,15 +451,16 @@ export class Game implements AfterViewInit, OnDestroy {
 
               updateStats();
 
+
               const obstacle =
                 tileObjects[rowIndex][columnIndex];
 
-              // Röviden pirosra vált
+
               obstacle.setFillStyle(
                 0xff3333
               );
 
-              // Majd visszaáll
+
               this.time.delayedCall(
                 400,
                 () => {
@@ -284,6 +473,7 @@ export class Game implements AfterViewInit, OnDestroy {
               );
 
               return;
+
             }
 
 
@@ -302,24 +492,23 @@ export class Game implements AfterViewInit, OnDestroy {
 
 
             /*
-             * Az ideiglenes bábu
+             * A játékosjelölő azonnal
              * az új mezőre kerül.
-             *
-             * NINCS animáció.
              */
 
             player.setPosition(
+
               playerColumn * tileSize +
                 tileSize / 2,
 
               playerRow * tileSize +
                 tileSize / 2
+
             );
 
 
             /*
-             * A bejárt mezőt
-             * kékre színezzük.
+             * Bejárt mező kékre vált.
              */
 
             tileObjects[rowIndex][columnIndex]
@@ -335,22 +524,13 @@ export class Game implements AfterViewInit, OnDestroy {
 
             /*
              * -------------------------
-             * CÉLBA ÉRÉS
+             * CÉL
              * -------------------------
              */
 
             if (tile === 'C') {
 
-              gameFinished = true;
-
-              statusText.setText(
-                `🎉 Célba értél! Lépések: ${steps}, hibák: ${mistakes}`
-              );
-
-              // A bábu teste zöld lesz
-              playerBody.setFillStyle(
-                0x00ff00
-              );
+              finishGame();
 
             }
 
@@ -368,6 +548,7 @@ export class Game implements AfterViewInit, OnDestroy {
 
               tileObjects[rowIndex] = [];
 
+
               row.forEach(
                 (tile, columnIndex) => {
 
@@ -375,12 +556,14 @@ export class Game implements AfterViewInit, OnDestroy {
                     columnIndex * tileSize +
                     tileSize / 2;
 
+
                   const y =
                     rowIndex * tileSize +
                     tileSize / 2;
 
 
                   let color = 0xffffff;
+
                   let label = '';
 
 
@@ -391,6 +574,7 @@ export class Game implements AfterViewInit, OnDestroy {
                   if (tile === 'S') {
 
                     color = 0x66cc66;
+
                     label = 'START';
 
                   }
@@ -403,6 +587,7 @@ export class Game implements AfterViewInit, OnDestroy {
                   if (tile === 'C') {
 
                     color = 0xffcc00;
+
                     label = 'CÉL';
 
                   }
@@ -415,22 +600,27 @@ export class Game implements AfterViewInit, OnDestroy {
                   if (tile === 'X') {
 
                     color = 0x555555;
+
                     label = 'X';
 
                   }
 
 
                   /*
-                   * MEZŐ LÉTREHOZÁSA
+                   * MEZŐ
                    */
 
                   const rectangle =
                     this.add.rectangle(
+
                       x,
                       y,
+
                       tileSize - 4,
                       tileSize - 4,
+
                       color
+
                     );
 
 
@@ -440,18 +630,9 @@ export class Game implements AfterViewInit, OnDestroy {
                   );
 
 
-                  /*
-                   * Eltároljuk a mezőt.
-                   */
+                  tileObjects[rowIndex][columnIndex] =
+                    rectangle;
 
-                  tileObjects[rowIndex]
-                    [columnIndex] =
-                      rectangle;
-
-
-                  /*
-                   * Kattinthatóvá tesszük.
-                   */
 
                   rectangle.setInteractive();
 
@@ -488,12 +669,14 @@ export class Game implements AfterViewInit, OnDestroy {
                       y,
                       label,
                       {
+
                         fontSize: '18px',
 
                         color:
                           tile === 'X'
                             ? '#ffffff'
                             : '#000000'
+
                       }
                     )
                     .setOrigin(0.5);
@@ -512,9 +695,6 @@ export class Game implements AfterViewInit, OnDestroy {
            * BILLENTYŰZETES
            * SZENZORSZIMULÁCIÓ
            * -------------------------
-           *
-           * A billentyűk a 4×4-es
-           * padlómezőket szimulálják:
            *
            * 1  2  3  4
            * Q  W  E  R
@@ -548,11 +728,6 @@ export class Game implements AfterViewInit, OnDestroy {
             };
 
 
-          /*
-           * Billentyűfigyelők
-           * létrehozása.
-           */
-
           Object.entries(keyMap)
             .forEach(
               ([keyName, position]) => {
@@ -561,12 +736,14 @@ export class Game implements AfterViewInit, OnDestroy {
                   this.input.keyboard
                     ?.addKey(keyName);
 
+
                 key?.on(
                   'down',
                   () => {
 
                     const [row, column] =
                       position;
+
 
                     tryMove(
                       row,
@@ -582,26 +759,79 @@ export class Game implements AfterViewInit, OnDestroy {
 
           /*
            * -------------------------
+           * INDÍTÁS GOMB
+           * -------------------------
+           */
+
+          const startButton =
+            this.add.text(
+              160,
+              tileSize * 4 + 105,
+              '▶ INDÍTÁS',
+              {
+
+                fontSize: '16px',
+
+                color: '#ffffff',
+
+                backgroundColor:
+                  '#16a34a',
+
+                padding: {
+
+                  x: 12,
+
+                  y: 6
+
+                }
+
+              }
+            )
+            .setInteractive({
+              useHandCursor: true
+            });
+
+
+          startButton.on(
+            'pointerdown',
+            () => {
+
+              startGame();
+
+              startButton.setVisible(false);
+
+            }
+          );
+
+
+          /*
+           * -------------------------
            * ÚJRAKEZDÉS GOMB
            * -------------------------
            */
 
           const restartButton =
             this.add.text(
-              320,
-              tileSize * 4 + 50,
-              '🔄 Újrakezdés',
+              350,
+              tileSize * 4 + 105,
+              '🔄 Újra',
               {
-                fontSize: '18px',
+
+                fontSize: '16px',
+
                 color: '#ffffff',
 
                 backgroundColor:
                   '#444444',
 
                 padding: {
+
                   x: 10,
+
                   y: 6
+
                 }
+
               }
             )
             .setInteractive({
@@ -619,7 +849,9 @@ export class Game implements AfterViewInit, OnDestroy {
           );
 
         }
+
       }
+
     };
 
 
