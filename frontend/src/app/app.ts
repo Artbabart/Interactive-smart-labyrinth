@@ -9,7 +9,6 @@ import { Level } from './levels/level.model';
 import { LEVELS } from './levels/levels';
 
 import { Child } from './children/child.model';
-import { CHILDREN } from './children/children';
 
 import { GameResult } from './results/game-result.model';
 
@@ -36,10 +35,30 @@ import {
 })
 export class App {
 
-  children = CHILDREN;
+  // =========================
+  // PÁLYÁK
+  // =========================
 
   levels = LEVELS;
 
+
+  // =========================
+  // GYEREKEK
+  // =========================
+
+  children =
+    signal<Child[]>([]);
+
+  childrenLoading =
+    signal(false);
+
+  childrenError =
+    signal('');
+
+
+  // =========================
+  // KIVÁLASZTÁS
+  // =========================
 
   selectedChild: Child | null = null;
 
@@ -89,11 +108,13 @@ export class App {
 
     this.testBackendConnection();
 
+    this.loadChildren();
+
   }
 
 
   // =========================
-  // BACKEND KAPCSOLAT TESZT
+  // BACKEND KAPCSOLAT
   // =========================
 
   testBackendConnection(): void {
@@ -128,6 +149,63 @@ export class App {
 
           console.error(
             'API hiba:',
+            error
+          );
+
+        }
+
+      });
+
+  }
+
+
+  // =========================
+  // GYEREKEK BETÖLTÉSE
+  // =========================
+
+  loadChildren(): void {
+
+    this.childrenLoading.set(true);
+
+    this.childrenError.set('');
+
+
+    this.apiService
+      .getChildren()
+      .subscribe({
+
+        next: (response) => {
+
+          this.children.set(
+            response.children
+          );
+
+          this.childrenLoading.set(
+            false
+          );
+
+          console.log(
+            'Betöltött gyerekek:',
+            response.children
+          );
+
+        },
+
+
+        error: (error) => {
+
+          this.children.set([]);
+
+          this.childrenLoading.set(
+            false
+          );
+
+          this.childrenError.set(
+            'A gyerekek betöltése nem sikerült.'
+          );
+
+          console.error(
+            'Gyerekek betöltési hiba:',
             error
           );
 

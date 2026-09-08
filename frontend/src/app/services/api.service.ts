@@ -18,6 +18,19 @@ export interface ApiTestResponse {
 }
 
 
+export interface ApiChild {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface ChildrenResponse {
+  children: ApiChild[];
+}
+
+
 export interface SaveResultResponse {
   message: string;
   result: unknown;
@@ -69,6 +82,16 @@ export class ApiService {
 
     return this.http.get<ApiTestResponse>(
       `${this.apiUrl}/test`
+    );
+
+  }
+
+
+  getChildren():
+    Observable<ChildrenResponse> {
+
+    return this.http.get<ChildrenResponse>(
+      `${this.apiUrl}/children`
     );
 
   }
