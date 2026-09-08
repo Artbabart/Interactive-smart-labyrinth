@@ -8,9 +8,45 @@ import {
   Observable
 } from 'rxjs';
 
+import {
+  CompletedGameResult
+} from '../results/completed-game-result.model';
+
 
 export interface ApiTestResponse {
   message: string;
+}
+
+
+export interface SaveResultResponse {
+  message: string;
+  result: unknown;
+}
+
+
+export interface StoredGameResult {
+  id: number;
+
+  child_id: number;
+  child_name: string;
+
+  level_id: number;
+  level_name: string;
+  difficulty: string;
+
+  steps: number;
+  mistakes: number;
+  time_seconds: number;
+
+  completed: boolean;
+
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface ResultsResponse {
+  results: StoredGameResult[];
 }
 
 
@@ -33,6 +69,28 @@ export class ApiService {
 
     return this.http.get<ApiTestResponse>(
       `${this.apiUrl}/test`
+    );
+
+  }
+
+
+  saveResult(
+    result: CompletedGameResult
+  ): Observable<SaveResultResponse> {
+
+    return this.http.post<SaveResultResponse>(
+      `${this.apiUrl}/results`,
+      result
+    );
+
+  }
+
+
+  getResults():
+    Observable<ResultsResponse> {
+
+    return this.http.get<ResultsResponse>(
+      `${this.apiUrl}/results`
     );
 
   }

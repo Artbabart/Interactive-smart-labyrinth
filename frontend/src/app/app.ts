@@ -1,4 +1,7 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  signal
+} from '@angular/core';
 
 import { Game } from './game/game';
 
@@ -9,9 +12,15 @@ import { Child } from './children/child.model';
 import { CHILDREN } from './children/children';
 
 import { GameResult } from './results/game-result.model';
-import { CompletedGameResult } from './results/completed-game-result.model';
 
-import { ApiService } from './services/api.service';
+import {
+  CompletedGameResult
+} from './results/completed-game-result.model';
+
+import {
+  ApiService,
+  StoredGameResult
+} from './services/api.service';
 
 
 @Component({
@@ -39,9 +48,39 @@ export class App {
   lastResult: CompletedGameResult | null = null;
 
 
-  apiMessage = '';
+  // =========================
+  // API ÁLLAPOT
+  // =========================
 
-  apiError = '';
+  apiMessage = signal('');
+
+  apiError = signal('');
+
+
+  // =========================
+  // MENTÉS ÁLLAPOT
+  // =========================
+
+  saveMessage = signal('');
+
+  saveError = signal('');
+
+
+  // =========================
+  // EREDMÉNYLISTA
+  // =========================
+
+  results =
+    signal<StoredGameResult[]>([]);
+
+  showResults =
+    signal(false);
+
+  resultsLoading =
+    signal(false);
+
+  resultsError =
+    signal('');
 
 
   constructor(
@@ -53,6 +92,10 @@ export class App {
   }
 
 
+  // =========================
+  // BACKEND KAPCSOLAT TESZT
+  // =========================
+
   testBackendConnection(): void {
 
     this.apiService
@@ -61,10 +104,11 @@ export class App {
 
         next: (response) => {
 
-          this.apiMessage =
-            response.message;
+          this.apiMessage.set(
+            response.message
+          );
 
-          this.apiError = '';
+          this.apiError.set('');
 
           console.log(
             'Laravel API válasza:',
@@ -73,12 +117,14 @@ export class App {
 
         },
 
+
         error: (error) => {
 
-          this.apiMessage = '';
+          this.apiMessage.set('');
 
-          this.apiError =
-            'Nem sikerült kapcsolódni a Laravel API-hoz.';
+          this.apiError.set(
+            'Nem sikerült kapcsolódni a Laravel API-hoz.'
+          );
 
           console.error(
             'API hiba:',
@@ -92,7 +138,96 @@ export class App {
   }
 
 
+  // =========================
+  // EREDMÉNYEK BETÖLTÉSE
+  // =========================
+
+  loadResults(): void {
+
+    this.resultsLoading.set(true);
+
+    this.resultsError.set('');
+
+
+    this.apiService
+      .getResults()
+      .subscribe({
+
+        next: (response) => {
+
+          this.results.set(
+            response.results
+          );
+
+          this.resultsLoading.set(
+            false
+          );
+
+          console.log(
+            'Betöltött eredmények:',
+            response.results
+          );
+
+        },
+
+
+        error: (error) => {
+
+          this.results.set([]);
+
+          this.resultsLoading.set(
+            false
+          );
+
+          this.resultsError.set(
+            'Az eredmények betöltése nem sikerült.'
+          );
+
+          console.error(
+            'Eredmények betöltési hiba:',
+            error
+          );
+
+        }
+
+      });
+
+  }
+
+
+  // =========================
+  // EREDMÉNYEK OLDAL
+  // =========================
+
+  openResults(): void {
+
+    this.showResults.set(true);
+
+    this.selectedChild = null;
+
+    this.selectedLevel = null;
+
+    this.lastResult = null;
+
+    this.loadResults();
+
+  }
+
+
+  closeResults(): void {
+
+    this.showResults.set(false);
+
+  }
+
+
+  // =========================
+  // GYEREK KIVÁLASZTÁSA
+  // =========================
+
   selectChild(child: Child): void {
+
+    this.showResults.set(false);
 
     this.selectedChild = child;
 
@@ -100,8 +235,16 @@ export class App {
 
     this.lastResult = null;
 
+    this.saveMessage.set('');
+
+    this.saveError.set('');
+
   }
 
+
+  // =========================
+  // PÁLYA INDÍTÁSA
+  // =========================
 
   startLevel(level: Level): void {
 
@@ -109,8 +252,16 @@ export class App {
 
     this.lastResult = null;
 
+    this.saveMessage.set('');
+
+    this.saveError.set('');
+
   }
 
+
+  // =========================
+  // VISSZA A GYEREKEKHEZ
+  // =========================
 
   backToChildren(): void {
 
@@ -120,8 +271,16 @@ export class App {
 
     this.lastResult = null;
 
+    this.saveMessage.set('');
+
+    this.saveError.set('');
+
   }
 
+
+  // =========================
+  // VISSZA A PÁLYÁKHOZ
+  // =========================
 
   backToLevels(): void {
 
@@ -129,8 +288,16 @@ export class App {
 
     this.lastResult = null;
 
+    this.saveMessage.set('');
+
+    this.saveError.set('');
+
   }
 
+
+  // =========================
+  // JÁTÉK BEFEJEZÉSE
+  // =========================
 
   handleGameFinished(
     gameResult: GameResult
@@ -169,6 +336,44 @@ export class App {
       'Teljes játék eredménye:',
       completedResult
     );
+
+
+    this.apiService
+      .saveResult(completedResult)
+      .subscribe({
+
+        next: (response) => {
+
+          this.saveMessage.set(
+            response.message
+          );
+
+          this.saveError.set('');
+
+          console.log(
+            'Mentés sikeres:',
+            response
+          );
+
+        },
+
+
+        error: (error) => {
+
+          this.saveMessage.set('');
+
+          this.saveError.set(
+            'Az eredmény mentése nem sikerült.'
+          );
+
+          console.error(
+            'Mentési hiba:',
+            error
+          );
+
+        }
+
+      });
 
   }
 

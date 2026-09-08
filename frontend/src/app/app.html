@@ -1,33 +1,152 @@
 <div class="app-container">
 
+  <!-- ========================= -->
   <!-- API ÁLLAPOT -->
+  <!-- ========================= -->
 
-  @if (apiMessage) {
+  @if (apiMessage()) {
 
     <div class="api-status success">
-
       Backend:
-      {{ apiMessage }}
-
+      {{ apiMessage() }}
     </div>
 
   }
 
-
-  @if (apiError) {
+  @if (apiError()) {
 
     <div class="api-status error">
+      {{ apiError() }}
+    </div>
 
-      {{ apiError }}
+  }
+
+
+  <!-- ========================= -->
+  <!-- EREDMÉNYEK NÉZET -->
+  <!-- ========================= -->
+
+  @if (showResults()) {
+
+    <div class="selection-screen">
+
+      <h1>
+        📊 Eredmények
+      </h1>
+
+      <button
+        class="navigation-button"
+        (click)="closeResults()"
+      >
+        ← Vissza
+      </button>
+
+
+      @if (resultsLoading()) {
+
+        <p>
+          Eredmények betöltése...
+        </p>
+
+      }
+
+
+      @if (resultsError()) {
+
+        <p>
+          ❌ {{ resultsError() }}
+        </p>
+
+      }
+
+
+      @if (
+        !resultsLoading() &&
+        !resultsError() &&
+        results().length === 0
+      ) {
+
+        <p>
+          Még nincs mentett eredmény.
+        </p>
+
+      }
+
+
+      @if (
+        !resultsLoading() &&
+        results().length > 0
+      ) {
+
+        <div class="results-list">
+
+          @for (
+            result of results();
+            track result.id
+          ) {
+
+            <div class="result-list-card">
+
+              <h2>
+                {{ result.child_name }}
+              </h2>
+
+              <p>
+                Pálya:
+                <strong>
+                  {{ result.level_name }}
+                </strong>
+              </p>
+
+              <p>
+                Nehézség:
+                <strong>
+                  {{ result.difficulty }}
+                </strong>
+              </p>
+
+              <p>
+                Idő:
+                <strong>
+                  {{ result.time_seconds }} mp
+                </strong>
+              </p>
+
+              <p>
+                Lépések:
+                <strong>
+                  {{ result.steps }}
+                </strong>
+              </p>
+
+              <p>
+                Hibák:
+                <strong>
+                  {{ result.mistakes }}
+                </strong>
+              </p>
+
+            </div>
+
+          }
+
+        </div>
+
+      }
 
     </div>
 
   }
 
 
+  <!-- ========================= -->
   <!-- GYEREK KIVÁLASZTÁSA -->
+  <!-- ========================= -->
 
-  @if (!selectedChild) {
+  @if (
+    !showResults() &&
+    !selectedChild
+  ) {
 
     <div class="selection-screen">
 
@@ -40,9 +159,20 @@
       </p>
 
 
+      <button
+        class="navigation-button"
+        (click)="openResults()"
+      >
+        📊 Eredmények
+      </button>
+
+
       <div class="card-list">
 
-        @for (child of children; track child.id) {
+        @for (
+          child of children;
+          track child.id
+        ) {
 
           <div class="selection-card">
 
@@ -71,9 +201,15 @@
   }
 
 
+  <!-- ========================= -->
   <!-- PÁLYA KIVÁLASZTÁSA -->
+  <!-- ========================= -->
 
-  @if (selectedChild && !selectedLevel) {
+  @if (
+    !showResults() &&
+    selectedChild &&
+    !selectedLevel
+  ) {
 
     <div class="selection-screen">
 
@@ -81,17 +217,12 @@
         ✨ Smart Labirintus ✨
       </h1>
 
-
       <p class="selected-child">
-
         Játékos:
-
         <strong>
           {{ selectedChild.name }}
         </strong>
-
       </p>
-
 
       <p class="subtitle">
         Válassz egy kalandot!
@@ -100,7 +231,10 @@
 
       <div class="card-list">
 
-        @for (level of levels; track level.id) {
+        @for (
+          level of levels;
+          track level.id
+        ) {
 
           <div class="selection-card">
 
@@ -108,17 +242,12 @@
               {{ level.name }}
             </h2>
 
-
             <p>
-
               Nehézség:
-
               <strong>
                 {{ level.difficulty }}
               </strong>
-
             </p>
-
 
             <button
               (click)="startLevel(level)"
@@ -145,34 +274,32 @@
   }
 
 
+  <!-- ========================= -->
   <!-- JÁTÉK -->
+  <!-- ========================= -->
 
-  @if (selectedChild && selectedLevel) {
+  @if (
+    !showResults() &&
+    selectedChild &&
+    selectedLevel
+  ) {
 
     <div class="game-screen">
-
 
       <div class="game-header">
 
         <div>
-
           Játékos:
-
           <strong>
             {{ selectedChild.name }}
           </strong>
-
         </div>
 
-
         <div>
-
           Pálya:
-
           <strong>
             {{ selectedLevel.name }}
           </strong>
-
         </div>
 
       </div>
@@ -192,6 +319,10 @@
       </app-game>
 
 
+      <!-- ========================= -->
+      <!-- EREDMÉNYKÁRTYA -->
+      <!-- ========================= -->
+
       @if (lastResult) {
 
         <div class="result-card">
@@ -201,13 +332,30 @@
           </h2>
 
 
+          @if (saveMessage()) {
+
+            <p class="save-success">
+              ✅ {{ saveMessage() }}
+            </p>
+
+          }
+
+
+          @if (saveError()) {
+
+            <p class="save-error">
+              ❌ {{ saveError() }}
+            </p>
+
+          }
+
+
           <p>
             Játékos:
             <strong>
               {{ lastResult.childName }}
             </strong>
           </p>
-
 
           <p>
             Pálya:
@@ -216,14 +364,12 @@
             </strong>
           </p>
 
-
           <p>
             Nehézség:
             <strong>
               {{ lastResult.difficulty }}
             </strong>
           </p>
-
 
           <p>
             Idő:
@@ -232,14 +378,12 @@
             </strong>
           </p>
 
-
           <p>
             Lépések:
             <strong>
               {{ lastResult.steps }}
             </strong>
           </p>
-
 
           <p>
             Hibák:
