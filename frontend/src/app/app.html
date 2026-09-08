@@ -7,23 +7,28 @@
   @if (apiMessage()) {
 
     <div class="api-status success">
+
       Backend:
       {{ apiMessage() }}
+
     </div>
 
   }
 
+
   @if (apiError()) {
 
     <div class="api-status error">
+
       {{ apiError() }}
+
     </div>
 
   }
 
 
   <!-- ========================= -->
-  <!-- EREDMÉNYEK NÉZET -->
+  <!-- EREDMÉNYEK -->
   <!-- ========================= -->
 
   @if (showResults()) {
@@ -33,6 +38,7 @@
       <h1>
         📊 Eredmények
       </h1>
+
 
       <button
         class="navigation-button"
@@ -91,12 +97,14 @@
                 {{ result.child_name }}
               </h2>
 
+
               <p>
                 Pálya:
                 <strong>
                   {{ result.level_name }}
                 </strong>
               </p>
+
 
               <p>
                 Nehézség:
@@ -105,6 +113,7 @@
                 </strong>
               </p>
 
+
               <p>
                 Idő:
                 <strong>
@@ -112,12 +121,14 @@
                 </strong>
               </p>
 
+
               <p>
                 Lépések:
                 <strong>
                   {{ result.steps }}
                 </strong>
               </p>
+
 
               <p>
                 Hibák:
@@ -154,6 +165,7 @@
         ✨ Smart Labirintus ✨
       </h1>
 
+
       <p class="subtitle">
         Ki fog játszani?
       </p>
@@ -167,34 +179,139 @@
       </button>
 
 
-      <div class="card-list">
+      <!-- ========================= -->
+      <!-- ÚJ GYEREK -->
+      <!-- ========================= -->
 
-        @for (
-          child of children;
-          track child.id
-        ) {
+      <div class="add-child-card">
 
-          <div class="selection-card">
+        <h2>
+          ➕ Új játékos
+        </h2>
 
-            <div class="child-icon">
-              🧒
-            </div>
 
-            <h2>
-              {{ child.name }}
-            </h2>
+        <input
+          #childNameInput
+          type="text"
+          placeholder="Gyerek neve"
+          maxlength="100"
+        >
 
-            <button
-              (click)="selectChild(child)"
-            >
-              Kiválasztás
-            </button>
 
-          </div>
+        <button
+          (click)="addChild(childNameInput)"
+          [disabled]="childCreateLoading()"
+        >
+
+          @if (childCreateLoading()) {
+
+            Mentés...
+
+          } @else {
+
+            Hozzáadás
+
+          }
+
+        </button>
+
+
+        @if (childCreateMessage()) {
+
+          <p class="save-success">
+
+            ✅ {{ childCreateMessage() }}
+
+          </p>
+
+        }
+
+
+        @if (childCreateError()) {
+
+          <p class="save-error">
+
+            ❌ {{ childCreateError() }}
+
+          </p>
 
         }
 
       </div>
+
+
+      <!-- ========================= -->
+      <!-- GYEREKLISTA -->
+      <!-- ========================= -->
+
+      @if (childrenLoading()) {
+
+        <p>
+          Gyerekek betöltése...
+        </p>
+
+      }
+
+
+      @if (childrenError()) {
+
+        <p>
+          ❌ {{ childrenError() }}
+        </p>
+
+      }
+
+
+      @if (
+        !childrenLoading() &&
+        !childrenError() &&
+        children().length === 0
+      ) {
+
+        <p>
+          Még nincs felvett gyerek.
+        </p>
+
+      }
+
+
+      @if (
+        !childrenLoading() &&
+        children().length > 0
+      ) {
+
+        <div class="card-list">
+
+          @for (
+            child of children();
+            track child.id
+          ) {
+
+            <div class="selection-card">
+
+              <div class="child-icon">
+                🧒
+              </div>
+
+
+              <h2>
+                {{ child.name }}
+              </h2>
+
+
+              <button
+                (click)="selectChild(child)"
+              >
+                Kiválasztás
+              </button>
+
+            </div>
+
+          }
+
+        </div>
+
+      }
 
     </div>
 
@@ -217,12 +334,17 @@
         ✨ Smart Labirintus ✨
       </h1>
 
+
       <p class="selected-child">
+
         Játékos:
+
         <strong>
           {{ selectedChild.name }}
         </strong>
+
       </p>
+
 
       <p class="subtitle">
         Válassz egy kalandot!
@@ -242,12 +364,17 @@
               {{ level.name }}
             </h2>
 
+
             <p>
+
               Nehézség:
+
               <strong>
                 {{ level.difficulty }}
               </strong>
+
             </p>
+
 
             <button
               (click)="startLevel(level)"
@@ -286,20 +413,28 @@
 
     <div class="game-screen">
 
+
       <div class="game-header">
 
         <div>
+
           Játékos:
+
           <strong>
             {{ selectedChild.name }}
           </strong>
+
         </div>
 
+
         <div>
+
           Pálya:
+
           <strong>
             {{ selectedLevel.name }}
           </strong>
+
         </div>
 
       </div>
@@ -319,10 +454,6 @@
       </app-game>
 
 
-      <!-- ========================= -->
-      <!-- EREDMÉNYKÁRTYA -->
-      <!-- ========================= -->
-
       @if (lastResult) {
 
         <div class="result-card">
@@ -335,7 +466,9 @@
           @if (saveMessage()) {
 
             <p class="save-success">
+
               ✅ {{ saveMessage() }}
+
             </p>
 
           }
@@ -344,52 +477,77 @@
           @if (saveError()) {
 
             <p class="save-error">
+
               ❌ {{ saveError() }}
+
             </p>
 
           }
 
 
           <p>
+
             Játékos:
+
             <strong>
               {{ lastResult.childName }}
             </strong>
+
           </p>
 
+
           <p>
+
             Pálya:
+
             <strong>
               {{ lastResult.levelName }}
             </strong>
+
           </p>
 
+
           <p>
+
             Nehézség:
+
             <strong>
               {{ lastResult.difficulty }}
             </strong>
+
           </p>
 
+
           <p>
+
             Idő:
+
             <strong>
               {{ lastResult.timeSeconds }} mp
             </strong>
+
           </p>
 
+
           <p>
+
             Lépések:
+
             <strong>
               {{ lastResult.steps }}
             </strong>
+
           </p>
 
+
           <p>
+
             Hibák:
+
             <strong>
               {{ lastResult.mistakes }}
             </strong>
+
           </p>
 
         </div>

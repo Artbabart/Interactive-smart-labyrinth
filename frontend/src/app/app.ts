@@ -57,6 +57,20 @@ export class App {
 
 
   // =========================
+  // ÚJ GYEREK
+  // =========================
+
+  childCreateLoading =
+    signal(false);
+
+  childCreateMessage =
+    signal('');
+
+  childCreateError =
+    signal('');
+
+
+  // =========================
   // KIVÁLASZTÁS
   // =========================
 
@@ -206,6 +220,90 @@ export class App {
 
           console.error(
             'Gyerekek betöltési hiba:',
+            error
+          );
+
+        }
+
+      });
+
+  }
+
+
+  // =========================
+  // ÚJ GYEREK HOZZÁADÁSA
+  // =========================
+
+  addChild(
+    input: HTMLInputElement
+  ): void {
+
+    const name =
+      input.value.trim();
+
+
+    if (!name) {
+
+      this.childCreateError.set(
+        'Adj meg egy nevet.'
+      );
+
+      this.childCreateMessage.set('');
+
+      return;
+
+    }
+
+
+    this.childCreateLoading.set(true);
+
+    this.childCreateMessage.set('');
+
+    this.childCreateError.set('');
+
+
+    this.apiService
+      .createChild(name)
+      .subscribe({
+
+        next: (response) => {
+
+          this.childCreateLoading.set(
+            false
+          );
+
+          this.childCreateMessage.set(
+            response.message
+          );
+
+          this.childCreateError.set('');
+
+          input.value = '';
+
+          console.log(
+            'Új gyerek létrehozva:',
+            response.child
+          );
+
+          this.loadChildren();
+
+        },
+
+
+        error: (error) => {
+
+          this.childCreateLoading.set(
+            false
+          );
+
+          this.childCreateMessage.set('');
+
+          this.childCreateError.set(
+            'A gyerek hozzáadása nem sikerült.'
+          );
+
+          console.error(
+            'Gyerek létrehozási hiba:',
             error
           );
 

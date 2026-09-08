@@ -31,6 +31,12 @@ export interface ChildrenResponse {
 }
 
 
+export interface CreateChildResponse {
+  message: string;
+  child: ApiChild;
+}
+
+
 export interface SaveResultResponse {
   message: string;
   result: unknown;
@@ -92,6 +98,20 @@ export class ApiService {
 
     return this.http.get<ChildrenResponse>(
       `${this.apiUrl}/children`
+    );
+
+  }
+
+
+  createChild(
+    name: string
+  ): Observable<CreateChildResponse> {
+
+    return this.http.post<CreateChildResponse>(
+      `${this.apiUrl}/children`,
+      {
+        name: name
+      }
     );
 
   }

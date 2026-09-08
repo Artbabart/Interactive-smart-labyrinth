@@ -352,3 +352,59 @@
 .result-list-card p {
   margin: 9px 0;
 }
+
+.add-child-card {
+  max-width: 420px;
+  margin: 30px auto;
+  padding: 22px;
+  box-sizing: border-box;
+
+  border-radius: 18px;
+
+  background:
+    rgba(255, 255, 255, 0.12);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.25);
+
+  text-align: center;
+}
+
+
+.add-child-card h2 {
+  margin-top: 0;
+}
+
+
+.add-child-card input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 12px 14px;
+
+  margin-bottom: 15px;
+
+  border: none;
+  border-radius: 10px;
+
+  font-size: 16px;
+}
+
+
+.add-child-card button {
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  font-weight: bold;
+}
+
+
+.add-child-card button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
