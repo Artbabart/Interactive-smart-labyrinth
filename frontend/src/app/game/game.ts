@@ -2,8 +2,10 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnDestroy,
+  Output,
   ViewChild
 } from '@angular/core';
 
@@ -11,6 +13,7 @@ import Phaser from 'phaser';
 
 import { Level } from '../levels/level.model';
 import { LEVEL_1 } from '../levels/level-1';
+import { GameResult } from '../results/game-result.model';
 
 
 @Component({
@@ -21,7 +24,11 @@ import { LEVEL_1 } from '../levels/level-1';
 })
 export class Game implements AfterViewInit, OnDestroy {
 
-  @Input() level: Level = LEVEL_1;
+  @Input()
+  level: Level = LEVEL_1;
+
+  @Output()
+  gameFinished = new EventEmitter<GameResult>();
 
   @ViewChild('gameContainer', { static: true })
   gameContainer!: ElementRef<HTMLDivElement>;
@@ -37,6 +44,11 @@ export class Game implements AfterViewInit, OnDestroy {
 
     const maze = level.maze;
 
+    // Erre azért van szükség,
+    // hogy a Phaserből elérjük
+    // az Angular komponenst.
+    const component = this;
+
 
     const config: Phaser.Types.Core.GameConfig = {
 
@@ -50,36 +62,36 @@ export class Game implements AfterViewInit, OnDestroy {
 
       backgroundColor: '#222222',
 
+
       scene: {
 
         create: function () {
 
-          /*
-           * -------------------------
-           * JÁTÉK ÁLLAPOTA
-           * -------------------------
-           */
-
           let playerRow = 0;
+
           let playerColumn = 0;
 
+
           let steps = 0;
+
           let mistakes = 0;
 
+
           let gameStarted = false;
-          let gameFinished = false;
+
+          let gameIsFinished = false;
+
 
           let startTime = 0;
+
           let elapsedSeconds = 0;
 
 
-          /*
-           * -------------------------
-           * PÁLYA NEVE
-           * -------------------------
-           */
+          // -------------------------
+          // SZÖVEGEK
+          // -------------------------
 
-          const levelText = this.add.text(
+          this.add.text(
             10,
             tileSize * 4 + 5,
             `${level.name} – ${level.difficulty}`,
@@ -89,12 +101,6 @@ export class Game implements AfterViewInit, OnDestroy {
             }
           );
 
-
-          /*
-           * -------------------------
-           * STÁTUSZ
-           * -------------------------
-           */
 
           const statusText = this.add.text(
             10,
@@ -107,12 +113,6 @@ export class Game implements AfterViewInit, OnDestroy {
           );
 
 
-          /*
-           * -------------------------
-           * STATISZTIKA
-           * -------------------------
-           */
-
           const statsText = this.add.text(
             10,
             tileSize * 4 + 70,
@@ -124,15 +124,9 @@ export class Game implements AfterViewInit, OnDestroy {
           );
 
 
-          /*
-           * -------------------------
-           * EREDMÉNY
-           * -------------------------
-           */
-
           const resultText = this.add.text(
             10,
-            tileSize * 4 + 105,
+            tileSize * 4 + 135,
             '',
             {
               fontSize: '16px',
@@ -141,30 +135,23 @@ export class Game implements AfterViewInit, OnDestroy {
           );
 
 
-          /*
-           * -------------------------
-           * MEZŐK TÁROLÁSA
-           * -------------------------
-           */
+          // -------------------------
+          // PÁLYA OBJEKTUMOK
+          // -------------------------
 
           const tileObjects:
             Phaser.GameObjects.Rectangle[][] = [];
 
 
-          /*
-           * -------------------------
-           * IDEIGLENES JÁTÉKOSJELÖLŐ
-           * -------------------------
-           *
-           * Fejlesztés közben mutatja,
-           * hogy a rendszer szerint
-           * melyik mezőn áll a gyerek.
-           */
+          // -------------------------
+          // JÁTÉKOS
+          // -------------------------
 
           const player = this.add.container(
             tileSize / 2,
             tileSize / 2
           );
+
 
           player.setDepth(10);
 
@@ -191,11 +178,9 @@ export class Game implements AfterViewInit, OnDestroy {
           ]);
 
 
-          /*
-           * -------------------------
-           * STATISZTIKA FRISSÍTÉSE
-           * -------------------------
-           */
+          // -------------------------
+          // STATISZTIKA FRISSÍTÉS
+          // -------------------------
 
           const updateStats = () => {
 
@@ -206,14 +191,9 @@ export class Game implements AfterViewInit, OnDestroy {
           };
 
 
-          /*
-           * -------------------------
-           * IDŐZÍTŐ
-           * -------------------------
-           *
-           * Már létezik, de csak akkor
-           * számol, ha gameStarted = true.
-           */
+          // -------------------------
+          // IDŐMÉRÉS
+          // -------------------------
 
           const timerEvent = this.time.addEvent({
 
@@ -223,16 +203,24 @@ export class Game implements AfterViewInit, OnDestroy {
 
             callback: () => {
 
-              if (!gameStarted || gameFinished) {
+              if (
+                !gameStarted ||
+                gameIsFinished
+              ) {
                 return;
               }
 
-              const currentTime = Date.now();
+
+              const currentTime =
+                Date.now();
+
 
               elapsedSeconds =
                 Math.floor(
-                  (currentTime - startTime) / 1000
+                  (currentTime - startTime) /
+                  1000
                 );
+
 
               updateStats();
 
@@ -241,24 +229,19 @@ export class Game implements AfterViewInit, OnDestroy {
           });
 
 
-          /*
-           * -------------------------
-           * JÁTÉK INDÍTÁSA
-           * -------------------------
-           *
-           * MOST:
-           * az INDÍTÁS gomb hívja meg.
-           *
-           * KÉSŐBB:
-           * az ESP32 / START FSR
-           * fogja meghívni.
-           */
+          // -------------------------
+          // JÁTÉK INDÍTÁSA
+          // -------------------------
 
           const startGame = () => {
 
-            if (gameStarted || gameFinished) {
+            if (
+              gameStarted ||
+              gameIsFinished
+            ) {
               return;
             }
+
 
             gameStarted = true;
 
@@ -266,49 +249,52 @@ export class Game implements AfterViewInit, OnDestroy {
 
             elapsedSeconds = 0;
 
+
             statusText.setText(
               '🚀 A játék elindult!'
             );
+
 
             updateStats();
 
           };
 
 
-          /*
-           * -------------------------
-           * JÁTÉK BEFEJEZÉSE
-           * -------------------------
-           */
+          // -------------------------
+          // JÁTÉK BEFEJEZÉSE
+          // -------------------------
 
           const finishGame = () => {
 
-            if (!gameStarted || gameFinished) {
+            if (
+              !gameStarted ||
+              gameIsFinished
+            ) {
               return;
             }
 
-            gameFinished = true;
+
+            gameIsFinished = true;
 
 
-            const endTime = Date.now();
+            const endTime =
+              Date.now();
+
 
             elapsedSeconds =
               Math.floor(
-                (endTime - startTime) / 1000
+                (endTime - startTime) /
+                1000
               );
 
 
             timerEvent.remove(false);
 
+
             updateStats();
 
 
-            /*
-             * Ezt az objektumot később
-             * elküldjük a Laravel API-nak.
-             */
-
-            const result = {
+            const result: GameResult = {
 
               levelId: level.id,
 
@@ -333,6 +319,14 @@ export class Game implements AfterViewInit, OnDestroy {
             );
 
 
+            // EREDMÉNY ÁTADÁSA
+            // A SZÜLŐ ANGULAR KOMPONENSNEK
+
+            component.gameFinished.emit(
+              result
+            );
+
+
             statusText.setText(
               '🎉 Célba értél!'
             );
@@ -350,21 +344,14 @@ export class Game implements AfterViewInit, OnDestroy {
           };
 
 
-          /*
-           * -------------------------
-           * MOZGÁS FELDOLGOZÁSA
-           * -------------------------
-           */
+          // -------------------------
+          // MOZGÁS
+          // -------------------------
 
           const tryMove = (
             rowIndex: number,
             columnIndex: number
           ) => {
-
-            /*
-             * Indítás előtt nem lehet
-             * mozogni.
-             */
 
             if (!gameStarted) {
 
@@ -377,25 +364,16 @@ export class Game implements AfterViewInit, OnDestroy {
             }
 
 
-            /*
-             * Befejezett játék után
-             * sem lehet tovább mozogni.
-             */
+            if (gameIsFinished) {
 
-            if (gameFinished) {
               return;
+
             }
 
 
             const tile =
               maze[rowIndex][columnIndex];
 
-
-            /*
-             * -------------------------
-             * SZOMSZÉDOSSÁG
-             * -------------------------
-             */
 
             const rowDistance =
               Math.abs(
@@ -414,40 +392,37 @@ export class Game implements AfterViewInit, OnDestroy {
               columnDistance === 1;
 
 
-            /*
-             * -------------------------
-             * NEM SZOMSZÉDOS
-             * -------------------------
-             */
+            // NEM SZOMSZÉDOS MEZŐ
 
             if (!isNeighbour) {
 
               mistakes++;
 
+
               statusText.setText(
                 '❌ Csak szomszédos mezőre léphetsz!'
               );
 
+
               updateStats();
+
 
               return;
 
             }
 
 
-            /*
-             * -------------------------
-             * AKADÁLY
-             * -------------------------
-             */
+            // AKADÁLY
 
             if (tile === 'X') {
 
               mistakes++;
 
+
               statusText.setText(
                 '❌ Ez akadály!'
               );
+
 
               updateStats();
 
@@ -472,44 +447,33 @@ export class Game implements AfterViewInit, OnDestroy {
                 }
               );
 
+
               return;
 
             }
 
 
-            /*
-             * -------------------------
-             * HELYES LÉPÉS
-             * -------------------------
-             */
+            // HELYES LÉPÉS
 
             playerRow = rowIndex;
+
             playerColumn = columnIndex;
 
+
             steps++;
+
 
             updateStats();
 
 
-            /*
-             * A játékosjelölő azonnal
-             * az új mezőre kerül.
-             */
-
             player.setPosition(
-
               playerColumn * tileSize +
                 tileSize / 2,
 
               playerRow * tileSize +
                 tileSize / 2
-
             );
 
-
-            /*
-             * Bejárt mező kékre vált.
-             */
 
             tileObjects[rowIndex][columnIndex]
               .setFillStyle(
@@ -522,11 +486,7 @@ export class Game implements AfterViewInit, OnDestroy {
             );
 
 
-            /*
-             * -------------------------
-             * CÉL
-             * -------------------------
-             */
+            // CÉL
 
             if (tile === 'C') {
 
@@ -537,11 +497,9 @@ export class Game implements AfterViewInit, OnDestroy {
           };
 
 
-          /*
-           * -------------------------
-           * LABIRINTUS KIRAJZOLÁSA
-           * -------------------------
-           */
+          // -------------------------
+          // PÁLYA KIRAJZOLÁSA
+          // -------------------------
 
           maze.forEach(
             (row, rowIndex) => {
@@ -567,10 +525,6 @@ export class Game implements AfterViewInit, OnDestroy {
                   let label = '';
 
 
-                  /*
-                   * START
-                   */
-
                   if (tile === 'S') {
 
                     color = 0x66cc66;
@@ -579,10 +533,6 @@ export class Game implements AfterViewInit, OnDestroy {
 
                   }
 
-
-                  /*
-                   * CÉL
-                   */
 
                   if (tile === 'C') {
 
@@ -593,10 +543,6 @@ export class Game implements AfterViewInit, OnDestroy {
                   }
 
 
-                  /*
-                   * AKADÁLY
-                   */
-
                   if (tile === 'X') {
 
                     color = 0x555555;
@@ -606,21 +552,13 @@ export class Game implements AfterViewInit, OnDestroy {
                   }
 
 
-                  /*
-                   * MEZŐ
-                   */
-
                   const rectangle =
                     this.add.rectangle(
-
                       x,
                       y,
-
                       tileSize - 4,
                       tileSize - 4,
-
                       color
-
                     );
 
 
@@ -637,12 +575,6 @@ export class Game implements AfterViewInit, OnDestroy {
                   rectangle.setInteractive();
 
 
-                  /*
-                   * -------------------------
-                   * EGÉRKATTINTÁS
-                   * -------------------------
-                   */
-
                   rectangle.on(
                     'pointerdown',
                     () => {
@@ -656,12 +588,6 @@ export class Game implements AfterViewInit, OnDestroy {
                   );
 
 
-                  /*
-                   * -------------------------
-                   * FELIRAT
-                   * -------------------------
-                   */
-
                   if (label) {
 
                     this.add.text(
@@ -669,14 +595,12 @@ export class Game implements AfterViewInit, OnDestroy {
                       y,
                       label,
                       {
-
                         fontSize: '18px',
 
                         color:
                           tile === 'X'
                             ? '#ffffff'
                             : '#000000'
-
                       }
                     )
                     .setOrigin(0.5);
@@ -690,17 +614,9 @@ export class Game implements AfterViewInit, OnDestroy {
           );
 
 
-          /*
-           * -------------------------
-           * BILLENTYŰZETES
-           * SZENZORSZIMULÁCIÓ
-           * -------------------------
-           *
-           * 1  2  3  4
-           * Q  W  E  R
-           * A  S  D  F
-           * Z  X  C  V
-           */
+          // -------------------------
+          // BILLENTYŰZETES TESZTELÉS
+          // -------------------------
 
           const keyMap:
             Record<string, [number, number]> = {
@@ -757,11 +673,9 @@ export class Game implements AfterViewInit, OnDestroy {
             );
 
 
-          /*
-           * -------------------------
-           * INDÍTÁS GOMB
-           * -------------------------
-           */
+          // -------------------------
+          // INDÍTÁS GOMB
+          // -------------------------
 
           const startButton =
             this.add.text(
@@ -769,7 +683,6 @@ export class Game implements AfterViewInit, OnDestroy {
               tileSize * 4 + 105,
               '▶ INDÍTÁS',
               {
-
                 fontSize: '16px',
 
                 color: '#ffffff',
@@ -778,13 +691,9 @@ export class Game implements AfterViewInit, OnDestroy {
                   '#16a34a',
 
                 padding: {
-
                   x: 12,
-
                   y: 6
-
                 }
-
               }
             )
             .setInteractive({
@@ -798,17 +707,17 @@ export class Game implements AfterViewInit, OnDestroy {
 
               startGame();
 
-              startButton.setVisible(false);
+              startButton.setVisible(
+                false
+              );
 
             }
           );
 
 
-          /*
-           * -------------------------
-           * ÚJRAKEZDÉS GOMB
-           * -------------------------
-           */
+          // -------------------------
+          // ÚJRAINDÍTÁS GOMB
+          // -------------------------
 
           const restartButton =
             this.add.text(
@@ -816,7 +725,6 @@ export class Game implements AfterViewInit, OnDestroy {
               tileSize * 4 + 105,
               '🔄 Újra',
               {
-
                 fontSize: '16px',
 
                 color: '#ffffff',
@@ -825,13 +733,9 @@ export class Game implements AfterViewInit, OnDestroy {
                   '#444444',
 
                 padding: {
-
                   x: 10,
-
                   y: 6
-
                 }
-
               }
             )
             .setInteractive({
@@ -842,6 +746,10 @@ export class Game implements AfterViewInit, OnDestroy {
           restartButton.on(
             'pointerdown',
             () => {
+
+              component.gameFinished.emit(
+                undefined as any
+              );
 
               this.scene.restart();
 
@@ -855,23 +763,11 @@ export class Game implements AfterViewInit, OnDestroy {
     };
 
 
-    /*
-     * -------------------------
-     * PHASER INDÍTÁSA
-     * -------------------------
-     */
-
     this.game =
       new Phaser.Game(config);
 
   }
 
-
-  /*
-   * -------------------------
-   * PHASER LEÁLLÍTÁSA
-   * -------------------------
-   */
 
   ngOnDestroy(): void {
 

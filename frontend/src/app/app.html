@@ -1,39 +1,40 @@
 <div class="app-container">
 
-  @if (!selectedLevel) {
+  <!-- ========================= -->
+  <!-- GYEREK KIVÁLASZTÁSA -->
+  <!-- ========================= -->
 
-    <div class="level-selection">
+  @if (!selectedChild) {
+
+    <div class="selection-screen">
 
       <h1>
         ✨ Smart Labirintus ✨
       </h1>
 
       <p class="subtitle">
-        Válassz egy kalandot!
+        Ki fog játszani?
       </p>
 
 
-      <div class="level-list">
+      <div class="card-list">
 
-        @for (level of levels; track level.id) {
+        @for (child of children; track child.id) {
 
-          <div class="level-card">
+          <div class="selection-card">
+
+            <div class="child-icon">
+              🧒
+            </div>
 
             <h2>
-              {{ level.name }}
+              {{ child.name }}
             </h2>
 
-            <p>
-              Nehézség:
-              <strong>
-                {{ level.difficulty }}
-              </strong>
-            </p>
-
             <button
-              (click)="startLevel(level)"
+              (click)="selectChild(child)"
             >
-              ▶ Indítás
+              Kiválasztás
             </button>
 
           </div>
@@ -47,24 +48,217 @@
   }
 
 
-  @if (selectedLevel) {
+  <!-- ========================= -->
+  <!-- PÁLYA KIVÁLASZTÁSA -->
+  <!-- ========================= -->
+
+  @if (selectedChild && !selectedLevel) {
+
+    <div class="selection-screen">
+
+      <h1>
+        ✨ Smart Labirintus ✨
+      </h1>
+
+
+      <p class="selected-child">
+
+        Játékos:
+
+        <strong>
+          {{ selectedChild.name }}
+        </strong>
+
+      </p>
+
+
+      <p class="subtitle">
+        Válassz egy kalandot!
+      </p>
+
+
+      <div class="card-list">
+
+        @for (level of levels; track level.id) {
+
+          <div class="selection-card">
+
+            <h2>
+              {{ level.name }}
+            </h2>
+
+
+            <p>
+
+              Nehézség:
+
+              <strong>
+                {{ level.difficulty }}
+              </strong>
+
+            </p>
+
+
+            <button
+              (click)="startLevel(level)"
+            >
+              ▶ Indítás
+            </button>
+
+          </div>
+
+        }
+
+      </div>
+
+
+      <button
+        class="navigation-button"
+        (click)="backToChildren()"
+      >
+        ← Másik játékos
+      </button>
+
+    </div>
+
+  }
+
+
+  <!-- ========================= -->
+  <!-- JÁTÉK -->
+  <!-- ========================= -->
+
+  @if (selectedChild && selectedLevel) {
 
     <div class="game-screen">
 
+
+      <div class="game-header">
+
+        <div>
+
+          Játékos:
+
+          <strong>
+            {{ selectedChild.name }}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          Pálya:
+
+          <strong>
+            {{ selectedLevel.name }}
+          </strong>
+
+        </div>
+
+      </div>
+
+
       <button
-        class="back-button"
-        (click)="backToMenu()"
+        class="navigation-button"
+        (click)="backToLevels()"
       >
         ← Vissza a pályákhoz
       </button>
 
-      <h2>
-        {{ selectedLevel.name }}
-      </h2>
+
+      <!-- PHASER JÁTÉK -->
 
       <app-game
-        [level]="selectedLevel">
+        [level]="selectedLevel"
+        (gameFinished)="handleGameFinished($event)">
       </app-game>
+
+
+      <!-- ========================= -->
+      <!-- EREDMÉNY -->
+      <!-- ========================= -->
+
+      @if (lastResult) {
+
+        <div class="result-card">
+
+
+          <h2>
+            🎉 Eredmény
+          </h2>
+
+
+          <p>
+
+            Játékos:
+
+            <strong>
+              {{ selectedChild.name }}
+            </strong>
+
+          </p>
+
+
+          <p>
+
+            Pálya:
+
+            <strong>
+              {{ lastResult.levelName }}
+            </strong>
+
+          </p>
+
+
+          <p>
+
+            Nehézség:
+
+            <strong>
+              {{ lastResult.difficulty }}
+            </strong>
+
+          </p>
+
+
+          <p>
+
+            Idő:
+
+            <strong>
+              {{ lastResult.timeSeconds }} mp
+            </strong>
+
+          </p>
+
+
+          <p>
+
+            Lépések:
+
+            <strong>
+              {{ lastResult.steps }}
+            </strong>
+
+          </p>
+
+
+          <p>
+
+            Hibák:
+
+            <strong>
+              {{ lastResult.mistakes }}
+            </strong>
+
+          </p>
+
+
+        </div>
+
+      }
+
 
     </div>
 
