@@ -1,8 +1,31 @@
 <div class="app-container">
 
-  <!-- ========================= -->
+  <!-- API ÁLLAPOT -->
+
+  @if (apiMessage) {
+
+    <div class="api-status success">
+
+      Backend:
+      {{ apiMessage }}
+
+    </div>
+
+  }
+
+
+  @if (apiError) {
+
+    <div class="api-status error">
+
+      {{ apiError }}
+
+    </div>
+
+  }
+
+
   <!-- GYEREK KIVÁLASZTÁSA -->
-  <!-- ========================= -->
 
   @if (!selectedChild) {
 
@@ -48,9 +71,7 @@
   }
 
 
-  <!-- ========================= -->
   <!-- PÁLYA KIVÁLASZTÁSA -->
-  <!-- ========================= -->
 
   @if (selectedChild && !selectedLevel) {
 
@@ -124,9 +145,7 @@
   }
 
 
-  <!-- ========================= -->
   <!-- JÁTÉK -->
-  <!-- ========================= -->
 
   @if (selectedChild && selectedLevel) {
 
@@ -167,22 +186,15 @@
       </button>
 
 
-      <!-- PHASER JÁTÉK -->
-
       <app-game
         [level]="selectedLevel"
         (gameFinished)="handleGameFinished($event)">
       </app-game>
 
 
-      <!-- ========================= -->
-      <!-- EREDMÉNY -->
-      <!-- ========================= -->
-
       @if (lastResult) {
 
         <div class="result-card">
-
 
           <h2>
             🎉 Eredmény
@@ -190,75 +202,55 @@
 
 
           <p>
-
             Játékos:
-
             <strong>
-              {{ selectedChild.name }}
+              {{ lastResult.childName }}
             </strong>
-
           </p>
 
 
           <p>
-
             Pálya:
-
             <strong>
               {{ lastResult.levelName }}
             </strong>
-
           </p>
 
 
           <p>
-
             Nehézség:
-
             <strong>
               {{ lastResult.difficulty }}
             </strong>
-
           </p>
 
 
           <p>
-
             Idő:
-
             <strong>
               {{ lastResult.timeSeconds }} mp
             </strong>
-
           </p>
 
 
           <p>
-
             Lépések:
-
             <strong>
               {{ lastResult.steps }}
             </strong>
-
           </p>
 
 
           <p>
-
             Hibák:
-
             <strong>
               {{ lastResult.mistakes }}
             </strong>
-
           </p>
-
 
         </div>
 
       }
-
 
     </div>
 
