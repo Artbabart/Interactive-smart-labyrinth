@@ -9,10 +9,15 @@ export const LEVEL_1: Level = {
   difficulty: 'Könnyű',
 
   maze: [
+
     ['S', 'P', 'X', 'X'],
+
     ['X', 'P', 'P', 'X'],
+
     ['X', 'X', 'P', 'C'],
-    ['P', 'P', 'P', 'X']
+
+    ['X', 'X', 'P', 'X']
+
   ]
 
 };
